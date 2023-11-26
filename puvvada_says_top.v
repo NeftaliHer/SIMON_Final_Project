@@ -132,7 +132,7 @@ module puvvada_says_top (
 //------------
 	// SSD (Seven Segment Display)
 
-	// Code to convert the decimal number stored in 'level' to 2 digit BCD which SSD needs
+	// Code to convert the Hexadecimal number stored in 'level' to 2 digit BCD which SSD needs
 	// ******NOTE: I dont think this is correct ? - Nef **********
 	always @(*)
 	begin
@@ -144,7 +144,7 @@ module puvvada_says_top (
 		else
 		begin
 			temp_level_ssd_ones = level[3:0]; //Getting ones digit
-			temp_level_ssd_tens = level[7:4]; // Getting tens digit
+			temp_level_ssd_tens = level[5:4]; // Getting tens digit. From [5:4] we will get a range from 0-5
 		end
 	end
 	// ******************************************************************
@@ -179,11 +179,12 @@ module puvvada_says_top (
 	// TODO: inactivate the following four annodes
 	assign {An7,An6,An5,An4} = 4'b1111;
 	
+	// Multiplexer to scan through SSD0 - SSD3 with ssdscan_clk[1:0]
 	always @ (ssdscan_clk, temp_level_ssd_tens, temp_level_ssd_ones)
 	begin : SSD_SCAN_OUT
 		case (ssdscan_clk) 
 		
-			// TODO: finish the multiplexer to scan through SSD0-SSD3 with ssdscan_clk[1:0]
+			// finish the multiplexer to scan through SSD0-SSD3 with ssdscan_clk[1:0]
 			2'b00: SSD0 = {4'b0000, temp_level_ssd_ones};
 			2'b01: SSD1 = {4'b0000, temp_level_ssd_tens};
 			2'b10: SSD2 = 7'b0000001; //Set SSD2 to display/remain 0
@@ -196,16 +197,16 @@ module puvvada_says_top (
 	begin : HEX_TO_SSD0
 		case (SSD0[3:0]) // We are doing SSD0[3:0] since we only want to look at the first 4 bits of SSD0 which will represent the numbers from 0-9. 
 		// Cases for 0-9.  
-            4'b0000: SSD_CATHODES = 7'b0000001; // 0
-            4'b0001: SSD_CATHODES = 7'b1001111; // 1
-            4'b0010: SSD_CATHODES = 7'b0010010; // 2
-            4'b0011: SSD_CATHODES = 7'b0000110; // 3
-            4'b0100: SSD_CATHODES = 7'b1001100; // 4
-            4'b0101: SSD_CATHODES = 7'b0100100; // 5
-            4'b0110: SSD_CATHODES = 7'b0100000; // 6
-            4'b0111: SSD_CATHODES = 7'b0001111; // 7
-            4'b1000: SSD_CATHODES = 7'b0000000; // 8
-            4'b1001: SSD_CATHODES = 7'b0001100; // 9 Got these values from LAB 3 documentation Lab Report
+            4'h0: SSD_CATHODES = 7'b0000001; // 0
+            4'h1: SSD_CATHODES = 7'b1001111; // 1
+            4'h2: SSD_CATHODES = 7'b0010010; // 2
+            4'h3: SSD_CATHODES = 7'b0000110; // 3
+            4'h4: SSD_CATHODES = 7'b1001100; // 4
+            4'h5: SSD_CATHODES = 7'b0100100; // 5
+            4'h6: SSD_CATHODES = 7'b0100000; // 6
+            4'h7: SSD_CATHODES = 7'b0001111; // 7
+            4'h8: SSD_CATHODES = 7'b0000000; // 8
+            4'h9: SSD_CATHODES = 7'b0001100; // 9 Got these values from LAB 3 documentation Lab Report
             
 			default: SSD_CATHODES = 7'bXXXXXXX ; // default is not needed as we covered all cases
 		endcase
@@ -216,16 +217,12 @@ module puvvada_says_top (
 	begin : HEX_TO_SSD1
 		case (SSD1[3:0]) // We are doing SSD0[3:0] since we only want to look at the first 4 bits of SSD0 which will represent the numbers from 0-9.  
 		// Cases for 0-9.  
-            4'b0000: SSD_CATHODES = 7'b0000001; // 0
-            4'b0001: SSD_CATHODES = 7'b1001111; // 1
-            4'b0010: SSD_CATHODES = 7'b0010010; // 2
-            4'b0011: SSD_CATHODES = 7'b0000110; // 3
-            4'b0100: SSD_CATHODES = 7'b1001100; // 4
-            4'b0101: SSD_CATHODES = 7'b0100100; // 5
-            4'b0110: SSD_CATHODES = 7'b0100000; // 6
-            4'b0111: SSD_CATHODES = 7'b0001111; // 7
-            4'b1000: SSD_CATHODES = 7'b0000000; // 8
-            4'b1001: SSD_CATHODES = 7'b0001100; // 9 Got these values from LAB 3 documentation Lab Report
+            4'h0: SSD_CATHODES = 7'b0000001; // 0
+            4'h1: SSD_CATHODES = 7'b1001111; // 1
+            4'h2: SSD_CATHODES = 7'b0010010; // 2
+            4'h3: SSD_CATHODES = 7'b0000110; // 3
+            4'h4: SSD_CATHODES = 7'b1001100; // 4
+            4'h5: SSD_CATHODES = 7'b0100100; // 5
             
 			default: SSD_CATHODES = 7'bXXXXXXX ; // default is not needed as we covered all cases
 		endcase
@@ -236,17 +233,17 @@ module puvvada_says_top (
 	begin : HEX_TO_SSD2
 		case (SSD2)
 			// Cases for 0 since SSD2 will always be 0  
-            4'b0000: SSD_CATHODES = 7'b0000001; // 0
+            4'h0: SSD_CATHODES = 7'b0000001; // 0
 			default: SSD_CATHODES = 7'bXXXXXXX ; // default is not needed as we covered all cases
 		endcase
 	end	
 	
-	// Following is Hex-to-SSD conversion for SSD2
+	// Following is Hex-to-SSD conversion for SSD3
 	always @ (SSD3) 
 	begin : HEX_TO_SSD3
 		case (SSD3)
-			// Cases for 0 since SSD2 will always be 0  
-            4'b0000: SSD_CATHODES = 7'b0000001; // 0
+			// Cases for 0 since SSD3 will always be 0  
+            4'h0: SSD_CATHODES = 7'b0000001; // 0
 			default: SSD_CATHODES = 7'bXXXXXXX ; // default is not needed as we covered all cases
 		endcase
 	end	
