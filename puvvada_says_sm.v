@@ -14,13 +14,13 @@
 module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit, score, level);
 	/*  INPUTS */
 	// Clock & Reset
-	input	Clk, Reset, Start; // <--- What is start? Is it BtnC input?
+	input	Clk, Reset, Start;
 	input   ON, Btn_U, Btn_R, Btn_D, Btn_L; //On is SW0
 	
 	
 	/*  OUTPUTS */
 	// store current state
-	output reg [6:0] level; //display on SSDs 
+	output reg [6:0] level; //display on SSDs
 	output reg [8:0] score; //result of game displayed on VGA
 	output q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit;
 	reg [5:0] state; //6 states
@@ -46,8 +46,9 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 	integer YELLOW = 3;
 	integer GREEN = 4;
 	integer count, b_input, curr,i;
-	reg [49:0] colors = 0;
-	integer MAX = 49;
+	reg [29:0] colors;
+	integer MAX = 9;
+    reg [2:0] the_color;
 	
 	
 	always @ (posedge Clk, posedge Reset)
@@ -62,12 +63,12 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 					INITIAL:
 					begin
 						// state transfers
-						if (Start && ON) state <= GET_COLOR;
-						if (~ON) state <= EXIT;
+					    if (~ON) state <= EXIT;
+						if(Start && ON) state <= GET_COLOR;
 						
 						// data transfers
-						score <= 8'h00; // <- Does this need to be a hex? Wouldnt it be easier to be a decimal?
-						level <= 6'h01; // <- does level need to be a hex number? Can we make it a decimal instead?
+						score <= 8'h00;
+						level <= 6'h01;
 						count = 1;
 						b_input = 0;
 						curr = 0;
@@ -82,11 +83,22 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						if (~ON) state <= EXIT;
 						else state <= U_INPUT;
 						
-						// data transfers
-						for (i = 0; i < count; i=i+1)
-						begin
-							colors[i] = $urandom_range(1,4);
-						end
+						// generates a 29 bit long number that is equivalent to 10 rounds (spereated by 3 bits)
+					    colors[2:0] = $urandom_range(1,4);
+						colors[5:3] = $urandom_range(1,4);
+						colors[8:6] = $urandom_range(1,4);
+						colors[11:9] = $urandom_range(1,4);
+						colors[14:12] = $urandom_range(1,4);
+						colors[17:15] = $urandom_range(1,4);
+						colors[20:18] = $urandom_range(1,4);
+						colors[23:21] = $urandom_range(1,4);
+						colors[26:24] = $urandom_range(1,4);
+						colors[29:27] = $urandom_range(1,4);
+						
+						//displaying large number
+						$display("Random: %b", colors);
+						$display("Round: %d", count);
+						//end
 						
 						//VGA DSIPLAY COLORS
 						//maybse use #100? for speed?
@@ -94,7 +106,6 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 
 					U_INPUT:
 					begin
-					    //UNPRESSED = (~Btn_U && ~Btn_R && ~Btn_D && ~Btn_L);
 						// state transfers
 						if (~ON) state <= EXIT;
 						else if (b_input == 0) state <= U_INPUT;
@@ -110,21 +121,36 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 					
 					COMPARE:
 					begin
+					    //takes a portion of the large number "colors" and sections it by 3 bits to result in a 1-4 choice. 
+					    the_color[0] = colors[curr];
+					    the_color[1] = colors[curr+1];
+					    the_color[2] = colors[curr+2];
+					    
+					    //dispalying current color
+					    $display("Color: %d", the_color);
+						$display("Count: %d", count);
+						
 						// state transfers
 						if (~ON) state <= EXIT;
-						else if ((b_input == colors[curr]) && (curr != count)) state <= U_INPUT;
-						else if ((b_input == colors[count])) state <= GET_COLOR; // Question: We might need to add && Curr == Count here right? 
-						else if ((b_input != colors[curr])) state <= LOST; 
+						else if ((b_input == the_color) && (curr != (count-1))) state <= U_INPUT;
+						else if ((b_input == the_color) && (curr == (count-1))) state <= GET_COLOR; 
+						else if ((b_input != the_color)) state <= LOST; 
 						
-						// data transfers
-						if (b_input == colors[curr]) curr <= curr + 1;
-						if (curr == count)
+						//got the current color correct, will go back to u-input for next
+						if (b_input == the_color) 
+						begin
+						  curr <= curr + 3;
+						  b_input <= 0;
+						end
+						
+						//got the last color correct
+						if (curr == (count-1))
 						begin
 							if (count == MAX) count <= MAX;
 							else count <= count + 1;
+							
 							score <= score + count;
-							// Nef adding level<=level + 1 here too
-							level <= level + 1;
+							level <= level +1; 
 							curr <= 0;
 						end
 					end
@@ -143,6 +169,7 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 					begin
 						// VGA Exit Display
 						// Message "Did you sign attendance? Okay Bye."
+						if (Start && ON) state <= INITIAL;
 					end
 					
 					default:		
