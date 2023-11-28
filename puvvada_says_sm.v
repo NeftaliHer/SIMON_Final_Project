@@ -2,12 +2,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 // Author:			Leslie Rodriguez, Neftali Hernandez
 // Create Date:   	11/16/2023, 
-// Revised:             11/25/23
+// Revised: 
 // File Name:		puvvada_says_sm.v 
 // Description: 
 //
 //
-// Revision: 		2.0
+// Revision: 		1.1
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
@@ -83,21 +83,34 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						if (~ON) state <= EXIT;
 						else state <= U_INPUT;
 						
+						//Dispalying Level
+						$display("Level: %d", level);
+
+						
 						// generates a 29 bit long number that is equivalent to 10 rounds (spereated by 3 bits)
 					    colors[2:0] = $urandom_range(1,4);
+					    $display("Color1: %d", colors[2:0]);
 						colors[5:3] = $urandom_range(1,4);
+						$display("Color2: %d", colors[5:3]);
 						colors[8:6] = $urandom_range(1,4);
+						$display("Color3: %d", colors[8:6]);
 						colors[11:9] = $urandom_range(1,4);
+						$display("Color4: %d", colors[11:9]);
 						colors[14:12] = $urandom_range(1,4);
+						$display("Color5: %d", colors[14:12]);
 						colors[17:15] = $urandom_range(1,4);
+						$display("Color6: %d", colors[17:15]);
 						colors[20:18] = $urandom_range(1,4);
+						$display("Color7: %d", colors[20:18]);
 						colors[23:21] = $urandom_range(1,4);
+						$display("Color8: %d", colors[23:21]);
 						colors[26:24] = $urandom_range(1,4);
+						$display("Color9: %d", colors[26:24]);
 						colors[29:27] = $urandom_range(1,4);
+						$display("Color10: %d", colors[29:27]);
 						
 						//displaying large number
-						$display("Random: %b", colors);
-						$display("Round: %d", count);
+						//$display("Random: %b", colors);
 						//end
 						
 						//VGA DSIPLAY COLORS
@@ -127,8 +140,7 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 					    the_color[2] = colors[curr+2];
 					    
 					    //dispalying current color
-					    $display("Color: %d", the_color);
-						$display("Count: %d", count);
+					    //$display("Compared and Actual: %d , %d", the_color, b_input);
 						
 						// state transfers
 						if (~ON) state <= EXIT;
