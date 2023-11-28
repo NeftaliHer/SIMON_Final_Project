@@ -140,6 +140,7 @@ module puvvada_says_top (
 
 	// Code to convert the decimal number stored in 'level' to 2 digit BCD which SSD needs
 	// ******NOTE: I dont think this is correct ? - Nef **********
+	//** Tried something - Les
 	always @(*)
 	begin
 	    temp = level;
