@@ -145,7 +145,12 @@ module puvvada_says_top (
 	// SSD (Seven Segment Display)
 
 	// Code to convert the decimal number stored in 'level' to 2 digit BCD which SSD needs
+<<<<<<< HEAD
 	// ******NOTE: I think now it works
+=======
+	// ******NOTE: I dont think this is correct ? - Nef **********
+	//** Tried something - Les
+>>>>>>> 577a79699b6af446cdcfc99c5b3849826e8d6cba
 	always @(*)
 	begin
 	   
