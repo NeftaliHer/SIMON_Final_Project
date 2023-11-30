@@ -11,7 +11,8 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit, score, level);
+
+module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit, score, level, gColor,b);
 	/*  INPUTS */
 	// Clock & Reset
 	input	Clk, Reset, Start;
@@ -22,6 +23,8 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 	// store current state
 	output reg [6:0] level; //display on SSDs
 	output reg [8:0] score; //result of game displayed on VGA
+	output reg [3:0] gColor;
+	output reg [3:0] b;
 	output q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit;
 	reg [5:0] state; //6 states
 	
@@ -73,6 +76,7 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						b_input = 0;
 						curr = 0;
 						colors = 0;
+						gColor <= 4'b0000;
 						
 						//VGA START SCREEN DSIPLAY 
 					end	
@@ -82,35 +86,19 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						// state transfers
 						if (~ON) state <= EXIT;
 						else state <= U_INPUT;
-						
-						//Dispalying Level
-						$display("Level: %d", level);
-
-						
+		
+					
 						// generates a 29 bit long number that is equivalent to 10 rounds (spereated by 3 bits)
-					    colors[2:0] = $urandom_range(1,4);
-					    $display("Color1: %d", colors[2:0]);
-						colors[5:3] = $urandom_range(1,4);
-						$display("Color2: %d", colors[5:3]);
-						colors[8:6] = $urandom_range(1,4);
-						$display("Color3: %d", colors[8:6]);
-						colors[11:9] = $urandom_range(1,4);
-						$display("Color4: %d", colors[11:9]);
-						colors[14:12] = $urandom_range(1,4);
-						$display("Color5: %d", colors[14:12]);
-						colors[17:15] = $urandom_range(1,4);
-						$display("Color6: %d", colors[17:15]);
-						colors[20:18] = $urandom_range(1,4);
-						$display("Color7: %d", colors[20:18]);
-						colors[23:21] = $urandom_range(1,4);
-						$display("Color8: %d", colors[23:21]);
-						colors[26:24] = $urandom_range(1,4);
-						$display("Color9: %d", colors[26:24]);
-						colors[29:27] = $urandom_range(1,4);
-						$display("Color10: %d", colors[29:27]);
-						
-						//displaying large number
-						//$display("Random: %b", colors);
+					    colors[2:0] = 1;
+						colors[5:3] = 2;
+						colors[8:6] = 3;
+						colors[11:9] = 4;
+						colors[14:12] = 1;
+						colors[17:15] = 2;
+						colors[20:18] = 3;
+						colors[23:21] = 4;
+						colors[26:24] = 1;
+						colors[29:27] = 2;
 						//end
 						
 						//VGA DSIPLAY COLORS
@@ -119,58 +107,69 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 
 					U_INPUT:
 					begin
+                        the_color[0] = colors[curr];
+					    the_color[1] = colors[curr+1];
+					    the_color[2] = colors[curr+2];
+					    gColor <= the_color;
+					    
 						// state transfers
 						if (~ON) state <= EXIT;
 						else if (b_input == 0) state <= U_INPUT;
 						else if ((b_input != 0) && (~Btn_U && ~Btn_R && ~Btn_D && ~Btn_L)) state <= COMPARE; 
 						
 						// data transfers
-						if (Btn_U) b_input = RED;
-						else if (Btn_R) b_input = BLUE;
-						else if (Btn_D) b_input = YELLOW;
-						else if (Btn_L) b_input = GREEN;
+						if (Btn_U) b_input <= RED;
+						else if (Btn_R) b_input <= BLUE;
+						else if (Btn_D) b_input <= YELLOW;
+						else if (Btn_L) b_input <= GREEN;
 						
+						b <= b_input;
 					end	
 					
 					COMPARE:
 					begin
+					$display("COMPARE");
+
 					    //takes a portion of the large number "colors" and sections it by 3 bits to result in a 1-4 choice. 
-					    the_color[0] = colors[curr];
-					    the_color[1] = colors[curr+1];
-					    the_color[2] = colors[curr+2];
+					    //the_color[0] = colors[curr];
+					    //the_color[1] = colors[curr+1];
+					    //the_color[2] = colors[curr+2];					    
 					    
-					    //dispalying current color
-					    //$display("Compared and Actual: %d , %d", the_color, b_input);
-						
 						// state transfers
 						if (~ON) state <= EXIT;
-						else if ((b_input == the_color) && (curr != (count-1))) state <= U_INPUT;
-						else if ((b_input == the_color) && (curr == (count-1))) state <= GET_COLOR; 
+						else if ((b_input == the_color) && (level != count)) state <= U_INPUT;
+						else if ((b_input == the_color) && (level == count)) state <= GET_COLOR; 
 						else if ((b_input != the_color)) state <= LOST; 
 						
 						//got the current color correct, will go back to u-input for next
 						if (b_input == the_color) 
 						begin
-						  curr <= curr + 3;
+						  //got the last color correct
+						  if (level == count)
+						  begin
+							 if (count == MAX) count <= MAX;
+							 else 
+							 count <= 1;
+							 score <= score + level;
+							 curr <= 0;
+							 level <= level +1;
+						  end
+						  else
+						  begin
+						      curr <= curr + 3;
+						      count <= count + 1;
+						  end
 						  b_input <= 0;
 						end
 						
-						//got the last color correct
-						if (curr == (count-1))
-						begin
-							if (count == MAX) count <= MAX;
-							else count <= count + 1;
-							
-							score <= score + count;
-							level <= level +1; 
-							curr <= 0;
-						end
+				            
 					end
 					
 					LOST:
 					begin
+
 						// VGA DISPLAY END SCREEN
-						// Message "Play Again?"
+						// Message "Play Again?
 						if (Start && ON) state <= INITIAL;
 						// Message "Done for Today?"
 						if (~ON) state <= EXIT;
@@ -182,6 +181,8 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						// VGA Exit Display
 						// Message "Did you sign attendance? Okay Bye."
 						if (Start && ON) state <= INITIAL;
+						score <= 8'h00;
+						level <= 6'h00;
 					end
 					
 					default:		
