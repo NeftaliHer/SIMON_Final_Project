@@ -94,8 +94,8 @@ def generate(name, rem_x=-1, rem_y=-1):
 
 
 # generate rom from full bitmap image
-#generate("0_start.jpeg")
-#generate("1_red.jpeg")
-#generate("2_blue.jpeg")
-#generate("3_yellow.jpeg")
-generate("4_green.jpeg")
+generate("zero_start.jpg")
+generate("one_red.jpg")
+generate("two_blue.jpg")
+generate("three_yellow.jpg")
+generate("four_green.jpg")
