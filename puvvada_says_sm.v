@@ -187,7 +187,7 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 						score <= 8'h00;
 						level <= 6'h01;
 						count = 1;
-						b_input = 0;
+						b_input <= 0;
 						curr = 0;
 						colors = 0;
 						gColor <= 'd0;
@@ -200,8 +200,8 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 					begin
 						// state transfers
 						if (~ON) state <= EXIT;
-						else state <= U_INPUT;
-		
+						else if(count > level)  state <= U_INPUT;
+						else state <= GET_COLOR;
 					
 						// generates a 29 bit long number that is equivalent to 10 rounds (spereated by 3 bits)
 					    if (level == 1)
@@ -280,16 +280,27 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 						   colors[29:27] = 1; end
 						//end
 						
-						//VGA DSIPLAY COLORS
-						//maybse use #100? for speed?
-					end
-
-					U_INPUT:
-					begin
-                        the_color[0] = colors[curr];
+						//Display Sequence
+						the_color[0] = colors[curr];
 					    the_color[1] = colors[curr+1];
 					    the_color[2] = colors[curr+2];
 					    gColor <= the_color;
+					    if(count > level)  begin
+					       count <= 1;
+					       gColor <= 0;
+					       curr <= 0;
+					       end
+					    else begin
+					       count <= count +1;
+					       curr <= curr + 3;
+					      end
+						
+						
+					end
+
+					U_INPUT:
+					//if(SCEN)
+					begin
 					    
 						// state transfers
 						if (~ON) state <= EXIT;
@@ -306,12 +317,11 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 					end	
 					
 					COMPARE:
-					//if(SCEN)
 					begin
 					    //takes a portion of the large number "colors" and sections it by 3 bits to result in a 1-4 choice. 
-					    //the_color[0] = colors[curr];
-					    //the_color[1] = colors[curr+1];
-					    //the_color[2] = colors[curr+2];					    
+					    the_color[0] = colors[curr];
+					    the_color[1] = colors[curr+1];
+					    the_color[2] = colors[curr+2];					    
 					    
 						// state transfers
 						if (~ON) state <= EXIT;
@@ -337,22 +347,17 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 						      curr <= curr + 3;
 						      count <= count + 1;
 						  end
-						  b_input <= 0;
+						  
 						end
-						
-				        
-				        $display("level: %d", level);
-				        $display("count: %d", count);
-				            
+				        b_input <= 0;
+				        b <= 0; 
 					end
 					
 					LOST:
 					begin
-						$display("LOST");
-
 						// VGA DISPLAY END SCREEN
 						// Message "Play Again?
-						if (Start && ON) state <= INITIAL;
+						if (~Start && ON) state <= INITIAL;
 						// Message "Done for Today?"
 						if (~ON) state <= EXIT;
 						
@@ -362,10 +367,9 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 					begin
 						// VGA Exit Display
 						// Message "Did you sign attendance? Okay Bye."
-						if (Start && ON) state <= INITIAL;
+						if (~Start && ON) state <= INITIAL;
 						score <= 8'h00;
 						level <= 6'h00;
-						gColor <= 4'b000;
 					end
 					
 					default:		
