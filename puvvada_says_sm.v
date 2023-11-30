@@ -11,11 +11,108 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
+//---FLIPFLIP Module for Random-----------------------------------------------
+module flipflop(q, clk, reset, d);
+    input clk;
+    input reset;
+    input d;
+    output q;
+    reg q;
+   
+    always @(posedge clk, posedge reset)
+     begin
+        if(reset)
+            q = 0;
+        else q = d;
+        $display("here 1");
+    end
+    
+    specify
+        $setup(d, clk, 2);
+        $hold(clk, d, 0);
+    endspecify
+    
+endmodule
 
-module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit, score, level, gColor,b);
+//---MUX Module for Random----------------------------------------------------
+module mux (q, control, a, b);
+    output q;
+    reg q;
+    input control, a, b;
+    wire notcontrol;
+    
+    always @(control or notcontrol or a or b) begin
+        q = (control & a) |(notcontrol & b);
+        $display("here 2"); end
+    not (notcontrol, control);
+
+endmodule
+
+//---XOR Module-------------------------------------
+module XOR (Y, A, B);
+    output Y; 
+    reg Y;
+    input A,B;
+    
+    always @(A or B)
+    begin
+    if (A == 1'b0 & B == 1'b0) 
+      Y = 1'b0; 
+    if (A == 1'b1 & B == 1'b1) 
+      Y = 1'b0;  
+    else 
+      Y = 1'b1;
+      
+     $display("here 3");
+   end 
+endmodule
+
+
+//---Completed Random -------------------------------------------------------------
+module lfsr(q, clk, rst, seed, load);
+    output q;
+    input [3:0] seed;
+    input load;
+    input rst;
+    input clk;
+    
+    wire q;
+    wire [3:0] state_out;
+    wire [3:0] state_in;
+    wire nextbit;
+    
+    flipflop F[3:0](state_out, state_in);
+    mux M1[3:0](state_in, load, seed, {state_out[2], state_out[1], state_out[0], nextbit});
+    XOR G1(nextbit, state_out[2], state_out[3]);
+    assign q = nextbit;
+    
+    always @(q) $display("here 4: %b", q);
+
+endmodule
+
+//-----------------
+
+module D_FF(input clk, reset, input load, D, output reg Q);
+    always @ (posedge clk)
+    begin
+    if (reset) 
+    begin Q <= 1'b0;
+     $display("here5.1"); end
+    else if(load) 
+    begin Q <= D;
+     $display("here5.2"); end
+    $display("here5.3");
+
+    end
+endmodule
+
+module puvvada_says_sm(Clk, SCEN, Reset, Start, ON, 
+                       Btn_U, Btn_R, Btn_D, Btn_L, 
+                       q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit,
+                       score, level, gColor,b);
 	/*  INPUTS */
 	// Clock & Reset
-	input	Clk, Reset, Start;
+	input	Clk, SCEN, Reset, Start;
 	input   ON, Btn_U, Btn_R, Btn_D, Btn_L; //On is SW0
 	
 	
@@ -28,8 +125,6 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 	output q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit;
 	reg [5:0] state; //6 states
 	
-	//reg[3:0] Timerout_count;
-	//wire Timerout;
 	
 	assign {q_Exit, q_Lost, q_Compare, q_UInput, q_GetColor, q_Initial} = state;
 	
@@ -52,6 +147,25 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 	reg [29:0] colors;
 	integer MAX = 9;
     reg [2:0] the_color;
+    
+    parameter zero = 4'b0000;
+    wire [3:0] Q = 4'b0001;
+    
+   // D_FF D0(Clk, Reset, ON, Q[1], Q[0]);
+   // D_FF D1(Clk, Reset, ON, Q[2], Q[1]);
+   // D_FF D2(Clk, Reset, ON, Q[3], Q[2]);
+   // D_FF D3(Clk, Reset, ON, ~(Q[3] ^ Q[2]),Q[3]);
+    
+//  lfsr C1[2:0](huh[0], Clk, Reset, 4'b0001, 1'b1);
+//	lfsr C2[2:0](huh[1], Clk, Reset, 4'b0010, 1 );
+//  lfsr C3[2:0](colors[8:6], Clk, Reset, 4'b0001, 1);
+//	lfsr C4[2:0](colors[11:9], Clk, Reset, 4'b0001, 1);
+//	lfsr C5[2:0](colors[14:12], Clk, Reset, 4'b0010, 0);
+//	lfsr C6[2:0](colors[17:15], Clk, Reset, 4'b0100, 1);
+//	lfsr C7[2:0](colors[20:18], Clk, Reset, 4'b0001, 1);
+//  lfsr C8[2:0](colors[23:21], Clk, Reset, 4'b0001, 1);
+//	lfsr C9[2:0](colors[26:24], Clk, Reset, 4'b0001, 1);
+//	lfsr C10[2:0](colors[29:27], Clk, Reset, 4'b0001, 1);
 	
 	
 	always @ (posedge Clk, posedge Reset)
@@ -76,7 +190,8 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						b_input = 0;
 						curr = 0;
 						colors = 0;
-						gColor <= 4'b0000;
+						gColor <= 'd0;
+						//$display("Q: %b", Q);
 						
 						//VGA START SCREEN DSIPLAY 
 					end	
@@ -89,16 +204,80 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 		
 					
 						// generates a 29 bit long number that is equivalent to 10 rounds (spereated by 3 bits)
-					    colors[2:0] = 1;
-						colors[5:3] = 2;
-						colors[8:6] = 3;
-						colors[11:9] = 4;
-						colors[14:12] = 1;
-						colors[17:15] = 2;
-						colors[20:18] = 3;
-						colors[23:21] = 4;
-						colors[26:24] = 1;
-						colors[29:27] = 2;
+					    if (level == 1)
+					       colors[2:0] = 1;
+					       
+					    else if (level == 2) begin
+					       colors[2:0] = 4;
+						   colors[5:3] = 3; end
+						   
+						else if (level == 3) begin
+					       colors[2:0] = 1;
+						   colors[5:3] = 2;
+						   colors[8:6] = 1; end
+						   
+						else if (level == 4) begin
+					       colors[2:0] = 4;
+						   colors[5:3] = 2;
+						   colors[8:6] = 3;
+						   colors[11:9] = 1; end
+					    
+					    else if (level == 5) begin
+					       colors[2:0] = 1;
+						   colors[5:3] = 4;
+						   colors[8:6] = 2;
+						   colors[11:9] = 3;
+						   colors[14:12] = 3; end
+						
+						else if (level == 6) begin
+					       colors[2:0] = 2;
+						   colors[5:3] = 2;
+						   colors[8:6] = 3;
+						   colors[11:9] = 1;
+						   colors[14:12] = 3;   
+						   colors[17:15] = 4; end
+						   
+						else if (level == 7) begin
+					       colors[2:0] = 1;
+						   colors[5:3] = 2;
+						   colors[8:6] = 4;
+						   colors[11:9] = 1;
+						   colors[14:12] = 2;   
+						   colors[17:15] = 4;   
+						   colors[20:18] = 2; end
+						   
+						else if (level == 8) begin
+					       colors[2:0] = 4;
+						   colors[5:3] = 3;
+						   colors[8:6] = 3;
+						   colors[11:9] = 1;
+						   colors[14:12] = 1;   
+						   colors[17:15] = 4;   
+						   colors[20:18] = 2; 
+						   colors[23:21] = 1; end
+					   
+					   else if (level == 9) begin
+					       colors[2:0] = 2;
+						   colors[5:3] = 3;
+						   colors[8:6] = 1;
+						   colors[11:9] = 1;
+						   colors[14:12] = 4;   
+						   colors[17:15] = 4;   
+						   colors[20:18] = 3; 
+						   colors[23:21] = 2; 
+						   colors[26:24] = 4; end
+						   
+						else if (level == 10) begin
+					       colors[2:0] = 3;
+						   colors[5:3] = 3;
+						   colors[8:6] = 4;
+						   colors[11:9] = 1;
+						   colors[14:12] = 2;   
+						   colors[17:15] = 4;   
+						   colors[20:18] = 3; 
+						   colors[23:21] = 1; 
+						   colors[26:24] = 4;
+						   colors[29:27] = 1; end
 						//end
 						
 						//VGA DSIPLAY COLORS
@@ -127,9 +306,8 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 					end	
 					
 					COMPARE:
+					//if(SCEN)
 					begin
-					$display("COMPARE");
-
 					    //takes a portion of the large number "colors" and sections it by 3 bits to result in a 1-4 choice. 
 					    //the_color[0] = colors[curr];
 					    //the_color[1] = colors[curr+1];
@@ -162,11 +340,15 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						  b_input <= 0;
 						end
 						
+				        
+				        $display("level: %d", level);
+				        $display("count: %d", count);
 				            
 					end
 					
 					LOST:
 					begin
+						$display("LOST");
 
 						// VGA DISPLAY END SCREEN
 						// Message "Play Again?
@@ -183,6 +365,7 @@ module puvvada_says_sm(Clk, Reset, Start, ON, Btn_U, Btn_R, Btn_D, Btn_L, q_Init
 						if (Start && ON) state <= INITIAL;
 						score <= 8'h00;
 						level <= 6'h00;
+						gColor <= 4'b000;
 					end
 					
 					default:		

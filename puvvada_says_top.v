@@ -46,6 +46,7 @@ module puvvada_says_top (
 	wire			board_clk, sys_clk;
 	wire [1:0]		ssdscan_clk;
 	reg [26:0]	    DIV_CLK;
+    wire            BtnR_Pulse, BtnL_Pulse, BtnD_Pulse, BtnU_Pulse;
 	
 	wire 			Btn_L, Btn_R, Btn_U, Btn_C, Btn_D, ON, Start;
 	wire 			q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit;
@@ -103,6 +104,7 @@ module puvvada_says_top (
 
 //------------
 	// INPUT: SWITCHES & BUTTONS
+	
 	assign Btn_L = BtnL;
 	assign Btn_R = BtnR;
 	assign Btn_U = BtnU;
@@ -110,11 +112,27 @@ module puvvada_says_top (
 	
 	assign ON = Sw0;
 	assign Start = Sw1; // Changed to Start = Sw1
+	
+	ee354_debouncer #(.N_dc(28)) ee354_debouncer_3 
+        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_R), .DPB( ), 
+		.SCEN(BtnR_Pulse), .MCEN( ), .CCEN( ));
+
+    ee354_debouncer #(.N_dc(28)) ee354_debouncer_2 
+        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_L), .DPB( ), 
+		.SCEN(BtnL_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
 		
+    ee354_debouncer #(.N_dc(28)) ee354_debouncer_1 
+        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_U), .DPB( ), 
+		.SCEN(BtnU_Pulse), .MCEN( ), .CCEN( ));
+
+    ee354_debouncer #(.N_dc(28)) ee354_debouncer_0 
+        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_D), .DPB( ), 
+		.SCEN(BtnD_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
+	
 //------------
 	// DESIGN
 	// Port List
-	puvvada_says_sm SM1(.Clk(sys_clk), .Reset(Reset), 
+	puvvada_says_sm SM1(.Clk(sys_clk), .SCEN(CEN_Pulse), .Reset(Reset), 
 								.Start(Start),
 								.ON(ON), 
                                 .Btn_U(Btn_U), 
@@ -132,25 +150,20 @@ module puvvada_says_top (
                                 .gColor(gColor),
                                 .b(b)
 								);		
-								
+							
 //------------
 // OUTPUT: LEDS
 	
 	assign {Ld7, Ld6, Ld5, Ld4} = {q_Initial, q_GetColor, q_UInput, q_Compare};
 	assign {Ld3} = {q_Lost};
-	assign {Ld2} = {BtnU}; // Reset is driven by BtnC, other buttons done ligt up
+	assign {Ld2} = {BtnU, BtnD,BtnL, BtnR}; // Reset is driven by BtnC
 	assign {Ld1, Ld0} = {Sw1, Sw0};
 							
 //------------
 	// SSD (Seven Segment Display)
 
 	// Code to convert the decimal number stored in 'level' to 2 digit BCD which SSD needs
-<<<<<<< HEAD
-	// ******NOTE: I think now it works
-=======
-	// ******NOTE: I dont think this is correct ? - Nef **********
-	//** Tried something - Les
->>>>>>> 577a79699b6af446cdcfc99c5b3849826e8d6cba
+	// ******NOTE:
 	always @(*)
 	begin
 	   
@@ -227,7 +240,7 @@ module puvvada_says_top (
 	begin : HEX_TO_SSD0
 		case (SSD) // We are doing SSD0[3:0] since we only want to look at the first 4 bits of SSD0 which will represent the numbers from 0-9. 
 		// Cases for 0-9.  01_100_010
-            4'b0000: SSD_CATHODES = 8'b00000011; // 0 //All last bits changed to 1 to turn off.
+            4'b0000: SSD_CATHODES = 8'b00000010; // 0 //All last bits changed to 1 to turn off.
 			4'b0001: SSD_CATHODES = 8'b10011111; // 1
 			4'b0010: SSD_CATHODES = 8'b00100101; // 2
 			4'b0011: SSD_CATHODES = 8'b00001101; // 3
