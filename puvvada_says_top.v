@@ -44,7 +44,7 @@ module puvvada_says_top (
 	/*  LOCAL SIGNALS */
 	wire			Reset, ClkPort;
 	wire			board_clk, sys_clk;
-	wire [1:0]		ssdscan_clk;
+	wire [2:0]		ssdscan_clk;
 	reg [26:0]	    DIV_CLK;
     wire            BtnR_Pulse, BtnL_Pulse, BtnD_Pulse, BtnU_Pulse;
 	
@@ -52,9 +52,10 @@ module puvvada_says_top (
 	wire 			q_Initial, q_GetColor, q_UInput, q_Compare, q_Lost, q_Exit;
 		
 	reg [7:0]  		SSD_CATHODES;
-	wire [3:0] SSD0, SSD1, SSD2, SSD3; // 7 bits for each SSD
+	wire [3:0] SSD0, SSD1, SSD2, SSD3, SSD4, SSD5; // 4 bits for each SSD
 	reg [3:0] SSD;
 	reg [3:0] temp_level_ssd_tens, temp_level_ssd_ones; // 2 seperate signals to hold the tens and ones place of our decimal variable 'level'
+    reg [3:0] score_ssd_tens, score_ssd_ones;
     
 	wire [6:0] level; //display on SSDs
     wire [8:0] score; //result of game displayed on VGA
@@ -104,7 +105,22 @@ module puvvada_says_top (
 
 //------------
 	// INPUT: SWITCHES & BUTTONS
-	
+	ee354_debouncer #(.N_dc(28)) ee354_debouncer_3 
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnR), .DPB( ), 
+		.SCEN(BtnR_Pulse), .MCEN( ), .CCEN( ));
+
+    ee354_debouncer #(.N_dc(28)) ee354_debouncer_2 
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnL), .DPB( ), 
+		.SCEN(BtnL_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
+		
+    ee354_debouncer #(.N_dc(28)) ee354_debouncer_1 
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), 
+		.SCEN(BtnU_Pulse), .MCEN( ), .CCEN( ));
+
+    ee354_debouncer #(.N_dc(28)) ee354_debouncer_0 
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnD), .DPB( ), 
+		.SCEN(BtnD_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
+		
 	assign Btn_L = BtnL;
 	assign Btn_R = BtnR;
 	assign Btn_U = BtnU;
@@ -113,22 +129,7 @@ module puvvada_says_top (
 	assign ON = Sw0;
 	assign Start = Sw1; // Changed to Start = Sw1
 	
-	ee354_debouncer #(.N_dc(28)) ee354_debouncer_3 
-        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_R), .DPB( ), 
-		.SCEN(BtnR_Pulse), .MCEN( ), .CCEN( ));
-
-    ee354_debouncer #(.N_dc(28)) ee354_debouncer_2 
-        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_L), .DPB( ), 
-		.SCEN(BtnL_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
 		
-    ee354_debouncer #(.N_dc(28)) ee354_debouncer_1 
-        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_U), .DPB( ), 
-		.SCEN(BtnU_Pulse), .MCEN( ), .CCEN( ));
-
-    ee354_debouncer #(.N_dc(28)) ee354_debouncer_0 
-        (.CLK(sys_clk), .RESET(Reset), .PB(Btn_D), .DPB( ), 
-		.SCEN(BtnD_Pulse), .MCEN( ), .CCEN( )); // to produce BtnU_Pulse from BtnU
-	
 //------------
 	// DESIGN
 	// Port List
@@ -150,7 +151,7 @@ module puvvada_says_top (
                                 .gColor(gColor),
                                 .b(b)
 								);		
-							
+								
 //------------
 // OUTPUT: LEDS
 	
@@ -178,6 +179,17 @@ module puvvada_says_top (
 			temp_level_ssd_tens = level/10; // Getting tens digit
 		end
 		
+		if(score < 10)
+		begin 
+			score_ssd_ones = score; //converts the bit number to a real number then to integer
+			score_ssd_tens = 4'b0000; // For single digit value of level the tens place will be 0 (zero)
+		end
+		else
+		begin
+			score_ssd_ones = score%10; //Getting ones digit
+			score_ssd_tens = score/10; // Getting tens digit
+		end
+		
 	end
 	// ******************************************************************
 	
@@ -202,30 +214,37 @@ module puvvada_says_top (
 	//  DIV_CLK[19]       |___________|           |___________|
 	//
 	
-	assign ssdscan_clk = DIV_CLK[19:18];
+	assign ssdscan_clk = DIV_CLK[20:18];
 	
-	assign An0	= !(~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 00
-	assign An1	= !(~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 01
-	assign An2	= !( (ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 10
-	assign An3	= !( (ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 11
+	assign An0	= !(~(ssdscan_clk[2]) && ~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk = 000
+	assign An1	= !(~(ssdscan_clk[2]) && ~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk = 001
+	assign An2	= !(~(ssdscan_clk[2]) && (ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk =  010
+	assign An3	= !(~(ssdscan_clk[2]) && (ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk =  011
+	assign An4	= !((ssdscan_clk[2]) && ~(ssdscan_clk[1]) && ~(ssdscan_clk[0]));  // when ssdscan_clk =  100
+	assign An5	= !((ssdscan_clk[2]) && ~(ssdscan_clk[1]) &&  (ssdscan_clk[0]));  // when ssdscan_clk =  101
 	
 	// TODO: inactivate the following four annodes
-	assign {An7,An6,An5,An4} = 4'b1111;
+	assign {An7,An6} = 2'b11;
 	
 	assign SSD0 = temp_level_ssd_ones;
 	assign SSD1 = temp_level_ssd_tens;
 	assign SSD2 = b; //Set SSD2 to display/remain 0
 	assign SSD3 = gColor; //Set SSD3 to display/remain 0
+	assign SSD4 = score_ssd_ones;
+	assign SSD5 = score_ssd_tens;
 	
-	always @ (ssdscan_clk, temp_level_ssd_tens, temp_level_ssd_ones)
+	always @ (ssdscan_clk, temp_level_ssd_tens, temp_level_ssd_ones, score_ssd_ones, score_ssd_tens)
 	begin : SSD_SCAN_OUT
 		case (ssdscan_clk) 
 		
 			// TODO: finish the multiplexer to scan through SSD0-SSD3 with ssdscan_clk[1:0]
-			2'b00: SSD = SSD0;
-			2'b01: SSD = SSD1;
-			2'b10: SSD = SSD2; //Set SSD2 to display/remain 0
-			2'b11: SSD = SSD3; //Set SSD3 to display/remain 0
+			3'b000: SSD = SSD0; //Level
+			3'b001: SSD = SSD1; //Level
+			3'b010: SSD = SSD2; //Button Input
+			3'b011: SSD = SSD3; //Color Sequence
+			3'b100: SSD = SSD4; //Score
+			3'b101: SSD = SSD5; //Score
+			
 		endcase 
 	end	
 	
@@ -240,7 +259,7 @@ module puvvada_says_top (
 	begin : HEX_TO_SSD0
 		case (SSD) // We are doing SSD0[3:0] since we only want to look at the first 4 bits of SSD0 which will represent the numbers from 0-9. 
 		// Cases for 0-9.  01_100_010
-            4'b0000: SSD_CATHODES = 8'b00000010; // 0 //All last bits changed to 1 to turn off.
+            4'b0000: SSD_CATHODES = 8'b00000011; // 0 //All last bits changed to 1 to turn off.
 			4'b0001: SSD_CATHODES = 8'b10011111; // 1
 			4'b0010: SSD_CATHODES = 8'b00100101; // 2
 			4'b0011: SSD_CATHODES = 8'b00001101; // 3

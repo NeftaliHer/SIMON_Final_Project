@@ -227,10 +227,10 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 						   colors[5:3] = 4;
 						   colors[8:6] = 2;
 						   colors[11:9] = 3;
-						   colors[14:12] = 3; end
+						   colors[14:12] = 2; end
 						
 						else if (level == 6) begin
-					       colors[2:0] = 2;
+					       colors[2:0] = 1;
 						   colors[5:3] = 2;
 						   colors[8:6] = 3;
 						   colors[11:9] = 1;
@@ -249,9 +249,9 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 						else if (level == 8) begin
 					       colors[2:0] = 4;
 						   colors[5:3] = 3;
-						   colors[8:6] = 3;
+						   colors[8:6] = 2;
 						   colors[11:9] = 1;
-						   colors[14:12] = 1;   
+						   colors[14:12] = 2;   
 						   colors[17:15] = 4;   
 						   colors[20:18] = 2; 
 						   colors[23:21] = 1; end
@@ -260,15 +260,15 @@ module puvvada_says_sm(Clk, SCEN, Reset, Start, ON,
 					       colors[2:0] = 2;
 						   colors[5:3] = 3;
 						   colors[8:6] = 1;
-						   colors[11:9] = 1;
-						   colors[14:12] = 4;   
+						   colors[11:9] = 3;
+						   colors[14:12] = 2;   
 						   colors[17:15] = 4;   
 						   colors[20:18] = 3; 
 						   colors[23:21] = 2; 
 						   colors[26:24] = 4; end
 						   
 						else if (level == 10) begin
-					       colors[2:0] = 3;
+					       colors[2:0] = 1;
 						   colors[5:3] = 3;
 						   colors[8:6] = 4;
 						   colors[11:9] = 1;
